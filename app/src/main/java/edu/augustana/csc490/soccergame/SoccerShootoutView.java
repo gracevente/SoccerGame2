@@ -5,7 +5,6 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -90,7 +89,7 @@ implements SurfaceHolder.Callback
         screenWidth = w;
         screenHeight = h;
 
-        numberSoccerBalls = 3;
+        numberSoccerBalls = 5;
         numberOfGoals = 0;
 
         goalLeft = screenWidth * 15 / 16;
@@ -98,11 +97,19 @@ implements SurfaceHolder.Callback
         goalRight = screenWidth;
         goalBottom = screenHeight * 2 / 3;
 
-        goalie = new Rect(0,0,20,50);
+
 
         //Create Soccer Balls
         Random random = new Random(); //random object to pick random points
-        soccerBallRadius = (goalBottom - goalTop)/20; //diameter of the soccerball is 1/10 of the goal
+        soccerBallRadius = (goalBottom - goalTop)/40; //diameter of the soccerball is 1/20 of the goal
+
+        int left = goalLeft - (goalRight - goalLeft);
+        int top = (goalBottom- (goalBottom-goalTop)/2) - ((goalBottom - goalTop) / 10) ;
+        int right = goalLeft - (goalRight - goalLeft)*3 / 2;
+        int bottom = (goalBottom- (goalBottom-goalTop)/2) + ((goalBottom - goalTop) / 10);
+
+        goalie = new Rect(left, top, right, bottom);// goalie is twice as big as the ball
+
         for(int i= 1; i<= numberSoccerBalls; i++) {
             soccerBalls.add(newSoccerBall());
         }
@@ -147,7 +154,7 @@ implements SurfaceHolder.Callback
     }
 
     //up date where the soccer balls are and check if they are any goals or balls that have gone off of the screen
-    public void moveSoccerBalls(){
+    public void updateGame(){
         //for (SoccerBall ball: soccerBalls){
           // ball.moveBall();
         //}
@@ -161,10 +168,17 @@ implements SurfaceHolder.Callback
                 Log.d("numGoals", "" + numberOfGoals);
             }
             //check if a ball goes off of the screen
-            if(soccerBalls.get(i).getX() > screenWidth){
+            if(soccerBalls.get(i).getX() > screenWidth || soccerBalls.get(i).getX() <= -1){
                 soccerBalls.remove(i);
                 soccerBalls.add(newSoccerBall());
             }
+
+            // check if a ball hits the goalie
+            if (goalie.contains( (int)soccerBalls.get(i).getX(), (int) soccerBalls.get(i).getY())) {
+                //change the velocity to opposite x direction
+                soccerBalls.get(i).setVX(-1 * soccerBalls.get(i).getVX());
+            }
+
 
             if ( numberOfGoals >= 10){
                 soccerShootoutThread.setRunning(false);
@@ -233,9 +247,9 @@ implements SurfaceHolder.Callback
         Point touchPoint = new Point ((int) event.getX(), (int) event.getY());
 
         int left = touchPoint.x - ((goalRight - goalLeft) / 4);
-        int top = touchPoint.y - ((goalBottom - goalTop) / 20) ;
+        int top = touchPoint.y - ((goalBottom - goalTop) / 10) ;
         int right = touchPoint.x + ((goalRight - goalLeft) / 4);;
-        int bottom = touchPoint.y + ((goalBottom - goalTop) / 20);
+        int bottom = touchPoint.y + ((goalBottom - goalTop) / 10);
 
         goalie.set(left, top, right, bottom);
     }
@@ -287,7 +301,7 @@ implements SurfaceHolder.Callback
                     // lock the surfaceHolder for drawing
                     synchronized(surfaceHolder)
                     {
-                        moveSoccerBalls();         // update game state
+                        updateGame();         // update game state
                         updateView(canvas); // draw using the canvas
                     }
                     Thread.sleep(10); // if you want to slow down the action...
