@@ -27,6 +27,7 @@ implements SurfaceHolder.Callback
     private boolean gameOver = true;
 
     private ArrayList<SoccerBall> soccerBalls; // ArrayList to represent the soccer balls
+    private int numberSoccerBalls;
     private Rect goal;
     private int soccerBallRadius;
 
@@ -42,6 +43,10 @@ implements SurfaceHolder.Callback
     private Paint goaliePaint;
     private Paint goalPaint;
     private Paint fieldPaint;
+
+    private int numberOfGoals;
+
+    private int numGoals;
 
     //constructor
     public SoccerShootoutView (Context context, AttributeSet attrs){
@@ -75,7 +80,10 @@ implements SurfaceHolder.Callback
         screenWidth = w;
         screenHeight = h;
 
-        goalLeft = screenWidth * 9 / 10;
+        numberSoccerBalls = 3;
+        numberOfGoals = 0;
+
+        goalLeft = screenWidth * 15 / 16;
         goalTop = screenHeight / 3;
         goalRight = screenWidth;
         goalBottom = screenHeight * 2 / 3;
@@ -85,7 +93,7 @@ implements SurfaceHolder.Callback
         //Create Soccer Balls
         Random random = new Random(); //random object to pick random points
         soccerBallRadius = screenWidth / 50 ;
-        for(int i= 1; i<= 20; i++) {
+        for(int i= 1; i<= numberSoccerBalls; i++) {
             //pick a random y coordinate for the ball to start at
             int startY = random.nextInt(screenHeight);
 
@@ -140,9 +148,40 @@ implements SurfaceHolder.Callback
             soccerShootoutThread.start();
         }
     }
+
+    //up date where the soccer balls are and check if they are any goals or balls that have gone off of the screen
     public void moveSoccerBalls(){
-        for (SoccerBall ball: soccerBalls){
-            ball.moveBall();
+        //for (SoccerBall ball: soccerBalls){
+          // ball.moveBall();
+        //}
+
+        for (int i = 0; i<soccerBalls.size(); i ++){
+            soccerBalls.get(i).moveBall();
+
+            //check if the ball is in the goal
+            if (soccerBalls.get(i).getX() >= goalLeft && soccerBalls.get(i).getX() < goalLeft+1 && soccerBalls.get(i).getY() >= goalTop && soccerBalls.get(i).getY() <= goalBottom){
+                numberOfGoals ++;
+                Log.d("numGoals", "" + numberOfGoals);
+            }
+            //check if a ball goes off of the screen
+            if(soccerBalls.get(i).getX() > screenWidth){
+                soccerBalls.remove(i);
+
+                Random random = new Random(); //random object to pick random points
+                //pick a random y coordinate for the ball to start at
+                int startY = random.nextInt(screenHeight);
+
+                //random point in the goal for the ball to travel towards
+                int destinationY = random.nextInt(goalBottom - goalTop + 1) + goalTop;
+                Point destination = new Point(screenWidth , destinationY);
+
+                //pick a random velocity for the ball to travel at
+                int randomVelocity = (random.nextInt(200 - 75 + 1) + 75);
+                int vx = destination.x / randomVelocity;
+                int vy = (destination.y - startY) / randomVelocity;
+                SoccerBall ball = new SoccerBall(0, startY, vx, vy);
+                soccerBalls.add(ball);
+            }
         }
     }
     public void updateView (Canvas canvas){
