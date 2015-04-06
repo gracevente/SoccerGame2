@@ -1,14 +1,20 @@
 package edu.augustana.csc490.soccergame;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.app.DialogFragment;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.os.Bundle;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
@@ -22,6 +28,9 @@ implements SurfaceHolder.Callback
 {
     private static final String TAG = "soccerTag";
 
+
+    private boolean dialogIsDisplayed = false;
+
     private SoccerShootoutThread soccerShootoutThread;
     private Activity mainActivity;
     private boolean gameOver = true;
@@ -29,6 +38,7 @@ implements SurfaceHolder.Callback
     private ArrayList<SoccerBall> soccerBalls; // ArrayList to represent the soccer balls
     private int numberSoccerBalls;
     private Rect goal;
+    private Rect goalie;
     private int soccerBallRadius;
 
     private int screenWidth;
@@ -88,11 +98,11 @@ implements SurfaceHolder.Callback
         goalRight = screenWidth;
         goalBottom = screenHeight * 2 / 3;
 
-
+        goalie = new Rect(0,0,20,50);
 
         //Create Soccer Balls
         Random random = new Random(); //random object to pick random points
-        soccerBallRadius = screenWidth / 50 ;
+        soccerBallRadius = (goalBottom - goalTop)/20; //diameter of the soccerball is 1/10 of the goal
         for(int i= 1; i<= numberSoccerBalls; i++) {
             soccerBalls.add(newSoccerBall());
         }
@@ -155,12 +165,19 @@ implements SurfaceHolder.Callback
                 soccerBalls.remove(i);
                 soccerBalls.add(newSoccerBall());
             }
+
+            if ( numberOfGoals >= 10){
+                soccerShootoutThread.setRunning(false);
+                showGameOverDialog();
+                gameOver = true;
+            }
         }
     }
     public void updateView (Canvas canvas){
         if (canvas != null) {
             canvas.drawRect(0,0, canvas.getWidth(), canvas.getHeight(), fieldPaint);
             canvas.drawRect(goal, goalPaint);
+            canvas.drawRect(goalie, goaliePaint);
 
            for (SoccerBall ball: soccerBalls){
               canvas.drawCircle(ball.getX(), ball.getY(),soccerBallRadius, soccerBallPaint);
@@ -168,6 +185,63 @@ implements SurfaceHolder.Callback
            }
         }
     }
+
+    private void showGameOverDialog(){
+        // DialogFragment to display quiz stats and start new quiz
+        final DialogFragment gameResult =
+                new DialogFragment()
+                {
+                    @Override
+                    public Dialog onCreateDialog(Bundle bundle)
+                    {
+
+                        AlertDialog.Builder builder =
+                                new AlertDialog.Builder(getActivity());
+                        builder.setTitle("Game Over");
+                     return builder.create();
+                    }
+                };
+        mainActivity.runOnUiThread(
+                new Runnable() {
+                    public void run()
+                    {
+                        dialogIsDisplayed = true;
+                        gameResult.setCancelable(false); // modal dialog
+                        gameResult.show(mainActivity.getFragmentManager(), "results");
+                    }
+                }
+        );
+    }
+
+
+    @Override
+    public boolean onTouchEvent(MotionEvent e) {
+        // get int representing the type of action which caused this event
+        int action = e.getAction();
+
+        // the user user touched the screen or dragged along the screen
+        if (action == MotionEvent.ACTION_DOWN ||
+                action == MotionEvent.ACTION_MOVE) {
+
+            calculateGoalie(e);
+
+        }
+        return true;
+    }
+    public void calculateGoalie(MotionEvent event) {
+        // gets location of user touch
+        Point touchPoint = new Point ((int) event.getX(), (int) event.getY());
+
+        int left = touchPoint.x - ((goalRight - goalLeft) / 4);
+        int top = touchPoint.y - ((goalBottom - goalTop) / 20) ;
+        int right = touchPoint.x + ((goalRight - goalLeft) / 4);;
+        int bottom = touchPoint.y + ((goalBottom - goalTop) / 20);
+
+        goalie.set(left, top, right, bottom);
+    }
+
+
+
 
     public SoccerBall newSoccerBall(){
         Random random = new Random(); //random object to pick random points
