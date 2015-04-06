@@ -94,21 +94,7 @@ implements SurfaceHolder.Callback
         Random random = new Random(); //random object to pick random points
         soccerBallRadius = screenWidth / 50 ;
         for(int i= 1; i<= numberSoccerBalls; i++) {
-            //pick a random y coordinate for the ball to start at
-            int startY = random.nextInt(screenHeight);
-
-            //random point in the goal for the ball to travel towards
-            int destinationY = random.nextInt(goalBottom - goalTop + 1) + goalTop;
-            Point destination = new Point(screenWidth , destinationY);
-
-            //pick a random velocity for the ball to travel at
-            int randomVelocity = (random.nextInt(200 - 75 + 1) + 75);
-            int vx = destination.x / randomVelocity;
-            int vy = (destination.y - startY) / randomVelocity;
-
-            //create the soccer ball and add it to the ArrayList
-            SoccerBall ball = new SoccerBall(0, startY, vx, vy );
-            soccerBalls.add(ball);
+            soccerBalls.add(newSoccerBall());
         }
 
         // create the goal
@@ -119,7 +105,8 @@ implements SurfaceHolder.Callback
 
     // stops the game; called by SoccerShootoutFragment's onPause method
     public void stopGame(){
-
+        if(soccerShootoutThread != null)
+            soccerShootoutThread.setRunning(false);
     }
 
     //releases resources; called by SoccerShootoutFragment's onDestroy method
@@ -166,21 +153,7 @@ implements SurfaceHolder.Callback
             //check if a ball goes off of the screen
             if(soccerBalls.get(i).getX() > screenWidth){
                 soccerBalls.remove(i);
-
-                Random random = new Random(); //random object to pick random points
-                //pick a random y coordinate for the ball to start at
-                int startY = random.nextInt(screenHeight);
-
-                //random point in the goal for the ball to travel towards
-                int destinationY = random.nextInt(goalBottom - goalTop + 1) + goalTop;
-                Point destination = new Point(screenWidth , destinationY);
-
-                //pick a random velocity for the ball to travel at
-                int randomVelocity = (random.nextInt(200 - 75 + 1) + 75);
-                int vx = destination.x / randomVelocity;
-                int vy = (destination.y - startY) / randomVelocity;
-                SoccerBall ball = new SoccerBall(0, startY, vx, vy);
-                soccerBalls.add(ball);
+                soccerBalls.add(newSoccerBall());
             }
         }
     }
@@ -194,6 +167,22 @@ implements SurfaceHolder.Callback
 
            }
         }
+    }
+
+    public SoccerBall newSoccerBall(){
+        Random random = new Random(); //random object to pick random points
+        //pick a random y coordinate for the ball to start at
+        int startY = random.nextInt(screenHeight);
+
+        //random point in the goal for the ball to travel towards
+        int destinationY = random.nextInt(goalBottom - goalTop + 1) + goalTop;
+        Point destination = new Point(screenWidth , destinationY);
+
+        //pick a random velocity for the ball to travel at
+        int randomVelocity = (random.nextInt(200 - 75 + 1) + 75);
+        int vx = destination.x / randomVelocity;
+        int vy = (destination.y - startY) / randomVelocity;
+        return new SoccerBall(0, startY, vx, vy);
     }
 
     //Thread subclass
