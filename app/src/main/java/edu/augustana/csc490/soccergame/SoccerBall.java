@@ -27,8 +27,9 @@ public class SoccerBall {
         return y;
     }
 
-    public float getX() {
+    public float getX() { return x; }
 
-        return x;
-    }
+    public float getVX() { return vx; }
+
+    public void setVX(float newVX) { vx = newVX; }
 }
