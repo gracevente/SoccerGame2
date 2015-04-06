@@ -33,6 +33,10 @@ implements SurfaceHolder.Callback
     private int screenWidth;
     private int screenHeight;
 
+    private int goalLeft;
+    private int goalTop;
+    private int goalBottom;
+    private int goalRight;
 
     private Paint soccerBallPaint;
     private Paint goaliePaint;
@@ -59,6 +63,9 @@ implements SurfaceHolder.Callback
 
         goalPaint = new Paint();
         goalPaint.setColor(Color.RED);
+
+
+
     }
 
     @Override
@@ -68,19 +75,26 @@ implements SurfaceHolder.Callback
         screenWidth = w;
         screenHeight = h;
 
+        goalLeft = screenWidth * 9 / 10;
+        goalTop = screenHeight / 3;
+        goalRight = screenWidth;
+        goalBottom = screenHeight * 2 / 3;
+
 
 
         //Create Soccer Balls
         Random random = new Random(); //random object to pick random points
         soccerBallRadius = screenWidth / 50 ;
         for(int i= 1; i<= 20; i++) {
+            //pick a random y coordinate for the ball to start at
+            int startY = random.nextInt(screenHeight);
 
-            int startY = random.nextInt(screenHeight); //pick a random y coordinate for the ball to start at
+            //random point in the goal for the ball to travel towards
+            int destinationY = random.nextInt(goalBottom - goalTop + 1) + goalTop;
+            Point destination = new Point(screenWidth , destinationY);
 
-            int destinationY = random.nextInt((screenHeight * 2 / 3) - (screenHeight / 3)+ 1) + screenHeight / 3; //random y coordinate in the goal for the ball to travel towards
-            Point destination = new Point(screenWidth , destinationY);// create a point in the goal which the ball will travel towards
-
-            int randomVelocity = (random.nextInt(200 - 75 + 1) + 75); //random velocity that the ball will travel at
+            //pick a random velocity for the ball to travel at
+            int randomVelocity = (random.nextInt(200 - 75 + 1) + 75);
             int vx = destination.x / randomVelocity;
             int vy = (destination.y - startY) / randomVelocity;
 
@@ -89,12 +103,8 @@ implements SurfaceHolder.Callback
             soccerBalls.add(ball);
         }
 
-        int left = screenWidth * 9 / 10;
-        int top = screenHeight / 3;
-        int right = screenWidth;
-        int bottom = screenHeight * 2 / 3;
-
-        goal = new Rect(left,top,right,bottom);
+        // create the goal
+        goal = new Rect(goalLeft, goalTop, goalRight, goalBottom);
         startNewGame();
     }
 
