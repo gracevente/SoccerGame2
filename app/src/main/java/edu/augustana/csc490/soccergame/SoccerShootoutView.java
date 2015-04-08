@@ -17,7 +17,6 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.view.View;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -37,7 +36,7 @@ implements SurfaceHolder.Callback
     private boolean gameOver = true;
 
     private ArrayList<SoccerBall> soccerBalls; // ArrayList to represent the soccer balls
-    private int numberSoccerBalls;
+    private int numberOfSoccerBalls; //number of soccer balls on the screen at any given time
     private Rect goal;
 
 
@@ -60,8 +59,12 @@ implements SurfaceHolder.Callback
     private Paint goaliePaint;
     private Paint goalPaint;
     private Paint fieldPaint;
+    private Paint numberOfGoalsPaint;
 
     private int numberOfGoals;
+    private int numberOfShots;
+
+    private int numberOfBlocks;
 
 
 
@@ -88,7 +91,8 @@ implements SurfaceHolder.Callback
         goalPaint = new Paint();
         goalPaint.setColor(Color.RED);
 
-
+        numberOfGoalsPaint = new Paint();
+        numberOfGoalsPaint.setColor(Color.BLACK);
 
     }
 
@@ -106,11 +110,193 @@ implements SurfaceHolder.Callback
 
         goal = new Rect(goalLeft, goalTop, goalRight, goalBottom);
 
-        soccerBallRadius = (goalBottom - goalTop)/40; //diameter of the soccerball is 1/20 of the goal
-
+        soccerBallRadius = (goalBottom - goalTop)/40; //diameter of the soccer ball is 1/20 of the goal
+        numberOfGoalsPaint.setTextSize(goalRight - goalLeft);
         startNewGame();
+    }// end onSizeChanged method
+
+
+
+    public void startNewGame() {
+        //clear soccerBalls arraylist
+        for(int i = soccerBalls.size() - 1; i >=0 ; i -- ){
+            soccerBalls.remove(i);
+        }
+
+        goalieLeft = 2 * goalLeft - goalRight;
+        goalieTop = (goalBottom- (goalBottom-goalTop)/2) - ((goalBottom - goalTop) / 10) ;
+        goalieRight = goalLeft - (goalRight - goalLeft) / 3;
+        goalieBottom = (goalBottom- (goalBottom-goalTop)/2) + ((goalBottom - goalTop) / 10);
+        goalie = new Rect(goalieLeft, goalieTop, goalieRight, goalieBottom);// goalie is twice as big as the ball?
+
+        numberOfSoccerBalls = 1;
+        numberOfGoals = 0;
+        numberOfShots = 0;
+
+        numberOfBlocks = 0;
+
+        for(int i= 1; i<= numberOfSoccerBalls; i++) {
+            soccerBalls.add(newSoccerBall());
+        }
+
+        if(gameOver) {
+            soccerShootoutThread = new SoccerShootoutThread(getHolder());
+            soccerShootoutThread.start();
+            gameOver = false;
+        }
+    }// end startNewGame method
+
+
+    //update where the soccer balls are and check if they are any goals or balls that have gone off of the screen
+    public void updateGame(){
+
+        for (int i = 0; i<soccerBalls.size(); i ++){
+            soccerBalls.get(i).moveBall();
+
+            //check if the ball is in the goal
+            if (goal.contains( (int)soccerBalls.get(i).getX(), (int) soccerBalls.get(i).getX())){
+                soccerBalls.remove(i);
+                soccerBalls.add(newSoccerBall());
+                numberOfGoals ++;
+                numberOfShots ++;
+                Log.w(TAG, "shots: " +numberOfShots);
+
+                Log.w(TAG, "numGoals: " + numberOfGoals);
+            }
+            //check if a ball goes off of the screen
+            Rect background = new Rect(0,0,screenWidth, screenHeight);
+            if(! background.contains((int)soccerBalls.get(i).getX(), (int) soccerBalls.get(i).getX())){
+                soccerBalls.remove(i);
+                soccerBalls.add(newSoccerBall());
+            }
+
+            // check if a ball hits the goalie
+            if (goalie.contains( (int)soccerBalls.get(i).getX(), (int) soccerBalls.get(i).getY()) && !soccerBalls.get(i).getVelocityHasBeenChanged()) {
+                //change the velocity to opposite x direction
+                soccerBalls.get(i).setVX(-1 * soccerBalls.get(i).getVX());
+                soccerBalls.get(i).setVelocityHasBeenChangedTrue();
+                numberOfBlocks ++;
+                numberOfShots ++;
+                Log.w(TAG, "shots: " +numberOfShots);
+
+                Log.w(TAG, "blocks: " + numberOfBlocks);
+            }
+        }
+        if ( numberOfGoals >= 10){
+            soccerShootoutThread.setRunning(false);
+            gameOver = true;
+            showGameOverDialog();
+        }
+    }// end update game method
+
+
+    //re-draw the updated game
+    public void updateView (Canvas canvas){
+        if (canvas != null) {
+            canvas.drawRect(0,0, canvas.getWidth(), canvas.getHeight(), fieldPaint);
+            canvas.drawRect(goal, goalPaint);
+            canvas.drawRect(goalie, goaliePaint);
+            canvas.drawText("Goals: " + numberOfGoals, screenWidth /16, screenHeight / 16 , numberOfGoalsPaint);
+
+           for (SoccerBall ball: soccerBalls){
+              canvas.drawCircle(ball.getX(), ball.getY(),soccerBallRadius, soccerBallPaint);
+
+           }
+        }
+    }// end updateView method
+
+
+    private void showGameOverDialog(){
+        // DialogFragment to display quiz stats and start new quiz
+        final DialogFragment gameResult =
+                new DialogFragment()
+                {
+                    @Override
+                    public Dialog onCreateDialog(Bundle bundle)
+                    {
+
+                        AlertDialog.Builder builder =
+                                new AlertDialog.Builder(getActivity());
+                        builder.setTitle("Game Over");
+                        builder.setMessage("Shots taken: " + numberOfShots + "\nShots blocked: " + numberOfBlocks + "\nPlay again?");
+                        builder.setNegativeButton("No.", endGameClickListener);
+                        builder.setPositiveButton("Yes.", playAgainClickListener);
+
+                     return builder.create();
+                    }
+                };
+        mainActivity.runOnUiThread(
+                new Runnable() {
+                    public void run()
+                    {
+                        dialogIsDisplayed = true;
+                        gameResult.setCancelable(false); // modal dialog
+                        gameResult.show(mainActivity.getFragmentManager(), "results");
+                    }
+                }
+        );
+    } // end showGameDialog method
+
+    DialogInterface.OnClickListener endGameClickListener = new DialogInterface.OnClickListener() {
+
+        @Override
+        public void onClick(DialogInterface dialog, int which) {
+            mainActivity.finish();
+        }
+    };
+
+    DialogInterface.OnClickListener playAgainClickListener = new DialogInterface.OnClickListener() {
+
+        @Override
+        public void onClick(DialogInterface dialog, int which) {
+
+            startNewGame();
+        }
+    };
+
+    @Override
+    public boolean onTouchEvent(MotionEvent e) {
+        // get int representing the type of action which caused this event
+        int action = e.getAction();
+
+        // the user user touched the screen or dragged along the screen
+        if (action == MotionEvent.ACTION_DOWN ||
+                action == MotionEvent.ACTION_MOVE) {
+
+            calculateGoalie(e);
+
+        }
+        return true;
     }
 
+    public void calculateGoalie(MotionEvent event) {
+        // gets location of user touch
+        Point touchPoint = new Point ((int) event.getX(), (int) event.getY());
+
+        goalieLeft = touchPoint.x - ((goalRight - goalLeft) / 3);
+        goalieTop = touchPoint.y - ((goalBottom - goalTop) / 10) ;
+        goalieRight = touchPoint.x + ((goalRight - goalLeft) / 3);
+        goalieBottom = touchPoint.y + ((goalBottom - goalTop) / 10);
+        goalie.set(goalieLeft, goalieTop, goalieRight, goalieBottom);
+    }
+
+    public SoccerBall newSoccerBall(){
+
+
+        Random random = new Random(); //random object to pick random points
+        //pick a random y coordinate for the ball to start at
+        int startY = random.nextInt(screenHeight);
+
+        //random point in the goal for the ball to travel towards
+        int destinationY = random.nextInt(goalBottom - goalTop + 1) + goalTop;
+        Point destination = new Point(screenWidth , destinationY);
+
+        //pick a random velocity for the ball to travel at
+        int randomVelocity = (random.nextInt(200 - 75 + 1) + 75);
+        int vx = destination.x / randomVelocity;
+        int vy = (destination.y - startY) / randomVelocity;
+        return new SoccerBall(0, startY, vx, vy);
+    }
 
     // stops the game; called by SoccerShootoutFragment's onPause method
     public void stopGame(){
@@ -137,165 +323,6 @@ implements SurfaceHolder.Callback
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
 
-    }
-    public void startNewGame() {
-        //clear soccerBalls arraylist
-        for(int i = soccerBalls.size() - 1; i >=0 ; i -- ){
-            soccerBalls.remove(i);
-        }
-
-        goalieLeft = 2 * goalLeft - goalRight;
-        goalieTop = (goalBottom- (goalBottom-goalTop)/2) - ((goalBottom - goalTop) / 10) ;
-        goalieRight = goalLeft - (goalRight - goalLeft) / 3;
-        goalieBottom = (goalBottom- (goalBottom-goalTop)/2) + ((goalBottom - goalTop) / 10);
-        goalie = new Rect(goalieLeft, goalieTop, goalieRight, goalieBottom);// goalie is twice as big as the ball?
-
-        numberSoccerBalls = 5;
-        numberOfGoals = 0;
-
-        for(int i= 1; i<= numberSoccerBalls; i++) {
-            soccerBalls.add(newSoccerBall());
-        }
-
-        if(gameOver) {
-            soccerShootoutThread = new SoccerShootoutThread(getHolder());
-            soccerShootoutThread.start();
-            gameOver = false;
-        }
-    }
-
-    //up date where the soccer balls are and check if they are any goals or balls that have gone off of the screen
-    public void updateGame(){
-
-        for (int i = 0; i<soccerBalls.size(); i ++){
-            soccerBalls.get(i).moveBall();
-
-            //check if the ball is in the goal
-            if (soccerBalls.get(i).getX() >= goalLeft && soccerBalls.get(i).getX() < goalLeft+1 && soccerBalls.get(i).getY() >= goalTop && soccerBalls.get(i).getY() <= goalBottom){
-                numberOfGoals ++;
-                Log.d(TAG, "numGoals: " + numberOfGoals);
-            }
-            //check if a ball goes off of the screen
-            if(soccerBalls.get(i).getX() > screenWidth || soccerBalls.get(i).getX() <= -1){
-                soccerBalls.remove(i);
-                soccerBalls.add(newSoccerBall());
-            }
-
-            // check if a ball hits the goalie
-            if (goalie.contains( (int)soccerBalls.get(i).getX(), (int) soccerBalls.get(i).getY()) && !soccerBalls.get(i).getVelocityHasBeenChanged()) {
-                //change the velocity to opposite x direction
-                soccerBalls.get(i).setVX(-1 * soccerBalls.get(i).getVX());
-                soccerBalls.get(i).setVelocityHasBeenChangedTrue();
-            }
-        }
-        if ( numberOfGoals >= 10){
-            soccerShootoutThread.setRunning(false);
-            gameOver = true;
-            showGameOverDialog();
-        }
-
-    }
-    public void updateView (Canvas canvas){
-        if (canvas != null) {
-            canvas.drawRect(0,0, canvas.getWidth(), canvas.getHeight(), fieldPaint);
-            canvas.drawRect(goal, goalPaint);
-            canvas.drawRect(goalie, goaliePaint);
-
-           for (SoccerBall ball: soccerBalls){
-              canvas.drawCircle(ball.getX(), ball.getY(),soccerBallRadius, soccerBallPaint);
-
-           }
-        }
-    }
-
-    private void showGameOverDialog(){
-        // DialogFragment to display quiz stats and start new quiz
-        final DialogFragment gameResult =
-                new DialogFragment()
-                {
-                    @Override
-                    public Dialog onCreateDialog(Bundle bundle)
-                    {
-
-                        AlertDialog.Builder builder =
-                                new AlertDialog.Builder(getActivity());
-                        builder.setTitle("Game Over");
-                        builder.setMessage("Shots taken: " + "\nShots blocked: " + "\nPlay again?");
-                        builder.setNegativeButton("No.", endGameClickListener);
-                        builder.setPositiveButton("Yes.", playAgainClickListener);
-
-                     return builder.create();
-                    }
-                };
-        mainActivity.runOnUiThread(
-                new Runnable() {
-                    public void run()
-                    {
-                        dialogIsDisplayed = true;
-                        gameResult.setCancelable(false); // modal dialog
-                        gameResult.show(mainActivity.getFragmentManager(), "results");
-                    }
-                }
-        );
-    }
-    DialogInterface.OnClickListener endGameClickListener = new DialogInterface.OnClickListener() {
-
-        @Override
-        public void onClick(DialogInterface dialog, int which) {
-            mainActivity.finish();
-        }
-    };
-
-    DialogInterface.OnClickListener playAgainClickListener = new DialogInterface.OnClickListener() {
-
-        @Override
-        public void onClick(DialogInterface dialog, int which) {
-
-            startNewGame();
-        }
-    };
-
-
-
-    @Override
-    public boolean onTouchEvent(MotionEvent e) {
-        // get int representing the type of action which caused this event
-        int action = e.getAction();
-
-        // the user user touched the screen or dragged along the screen
-        if (action == MotionEvent.ACTION_DOWN ||
-                action == MotionEvent.ACTION_MOVE) {
-
-            calculateGoalie(e);
-
-        }
-        return true;
-    }
-    public void calculateGoalie(MotionEvent event) {
-        // gets location of user touch
-        Point touchPoint = new Point ((int) event.getX(), (int) event.getY());
-
-        goalieLeft = touchPoint.x - ((goalRight - goalLeft) / 3);
-        goalieTop = touchPoint.y - ((goalBottom - goalTop) / 10) ;
-        goalieRight = touchPoint.x + ((goalRight - goalLeft) / 3);
-        goalieBottom = touchPoint.y + ((goalBottom - goalTop) / 10);
-        goalie.set(goalieLeft, goalieTop, goalieRight, goalieBottom);
-    }
-
-    public SoccerBall newSoccerBall(){
-        Random random = new Random(); //random object to pick random points
-        //pick a random y coordinate for the ball to start at
-        int startY = random.nextInt(screenHeight);
-
-        //random point in the goal for the ball to travel towards
-        int destinationY = random.nextInt(goalBottom - goalTop + 1) + goalTop;
-        Point destination = new Point(screenWidth , destinationY);
-
-        //pick a random velocity for the ball to travel at
-        int randomVelocity = (random.nextInt(200 - 75 + 1) + 75);
-        int vx = destination.x / randomVelocity;
-        int vy = (destination.y - startY) / randomVelocity;
-        return new SoccerBall(0, startY, vx, vy);
     }
 
     //Thread subclass
