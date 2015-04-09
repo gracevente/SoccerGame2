@@ -1,16 +1,24 @@
+//Grace Vente
+//Individual App
+//All soccer ball images are from pdclipart.org
+
 package edu.augustana.csc490.soccergame;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -28,6 +36,8 @@ implements SurfaceHolder.Callback
 {
     private static final String TAG = "soccerTag";
 
+    private Bitmap soccerBallBitMap = BitmapFactory.decodeResource(getResources(), R.drawable.soccer_ball_1);
+    private Bitmap resizedSoccerBallBitMap;
 
     private boolean dialogIsDisplayed = false;
 
@@ -96,6 +106,7 @@ implements SurfaceHolder.Callback
 
     }
 
+    @TargetApi(Build.VERSION_CODES.KITKAT)
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh){
         super.onSizeChanged(w, h, oldw, oldh);
@@ -112,6 +123,8 @@ implements SurfaceHolder.Callback
 
         soccerBallRadius = (goalBottom - goalTop)/40; //diameter of the soccer ball is 1/20 of the goal
         numberOfGoalsPaint.setTextSize(goalRight - goalLeft);
+
+        resizedSoccerBallBitMap = Bitmap.createScaledBitmap(soccerBallBitMap, soccerBallRadius * 2, soccerBallRadius * 2, false);
         startNewGame();
     }// end onSizeChanged method
 
@@ -129,7 +142,7 @@ implements SurfaceHolder.Callback
         goalieBottom = (goalBottom- (goalBottom-goalTop)/2) + ((goalBottom - goalTop) / 10);
         goalie = new Rect(goalieLeft, goalieTop, goalieRight, goalieBottom);// goalie is twice as big as the ball?
 
-        numberOfSoccerBalls = 1;
+        numberOfSoccerBalls = 5;
         numberOfGoals = 0;
         numberOfShots = 0;
 
@@ -198,9 +211,10 @@ implements SurfaceHolder.Callback
             canvas.drawRect(goalie, goaliePaint);
             canvas.drawText("Goals: " + numberOfGoals, screenWidth /16, screenHeight / 16 , numberOfGoalsPaint);
 
+
            for (SoccerBall ball: soccerBalls){
               canvas.drawCircle(ball.getX(), ball.getY(),soccerBallRadius, soccerBallPaint);
-
+              canvas.drawBitmap(resizedSoccerBallBitMap, ball.getX() - soccerBallRadius, ball.getY() - soccerBallRadius, null);
            }
         }
     }// end updateView method
