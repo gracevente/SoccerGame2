@@ -36,7 +36,7 @@ implements SurfaceHolder.Callback
 {
     private static final String TAG = "soccerTag";
 
-    private Bitmap soccerBallBitMap = BitmapFactory.decodeResource(getResources(), R.drawable.soccer_ball_1);
+    private Bitmap soccerBallBitMap = BitmapFactory.decodeResource(getResources(), R.drawable.soccer_ball_2);
     private Bitmap resizedSoccerBallBitMap;
 
     private boolean dialogIsDisplayed = false;
@@ -74,7 +74,7 @@ implements SurfaceHolder.Callback
     private int numberOfGoals;
     private int numberOfShots;
 
-    private int numberOfBlocks;
+    private int numberOfSaves;
 
 
 
@@ -106,7 +106,7 @@ implements SurfaceHolder.Callback
 
     }
 
-    @TargetApi(Build.VERSION_CODES.KITKAT)
+
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh){
         super.onSizeChanged(w, h, oldw, oldh);
@@ -146,7 +146,7 @@ implements SurfaceHolder.Callback
         numberOfGoals = 0;
         numberOfShots = 0;
 
-        numberOfBlocks = 0;
+        numberOfSaves = 0;
 
         for(int i= 1; i<= numberOfSoccerBalls; i++) {
             soccerBalls.add(newSoccerBall());
@@ -188,11 +188,11 @@ implements SurfaceHolder.Callback
                 //change the velocity to opposite x direction
                 soccerBalls.get(i).setVX(-1 * soccerBalls.get(i).getVX());
                 soccerBalls.get(i).setVelocityHasBeenChangedTrue();
-                numberOfBlocks ++;
+                numberOfSaves++;
                 numberOfShots ++;
                 Log.w(TAG, "shots: " +numberOfShots);
 
-                Log.w(TAG, "blocks: " + numberOfBlocks);
+                Log.w(TAG, "blocks: " + numberOfSaves);
             }
         }
         if ( numberOfGoals >= 10){
@@ -209,7 +209,7 @@ implements SurfaceHolder.Callback
             canvas.drawRect(0,0, canvas.getWidth(), canvas.getHeight(), fieldPaint);
             canvas.drawRect(goal, goalPaint);
             canvas.drawRect(goalie, goaliePaint);
-            canvas.drawText("Goals: " + numberOfGoals, screenWidth /16, screenHeight / 16 , numberOfGoalsPaint);
+            canvas.drawText("Goals: " + numberOfGoals + "  Saves: " + numberOfSaves, screenWidth /16, screenHeight / 16 , numberOfGoalsPaint);
 
 
            for (SoccerBall ball: soccerBalls){
@@ -232,7 +232,7 @@ implements SurfaceHolder.Callback
                         AlertDialog.Builder builder =
                                 new AlertDialog.Builder(getActivity());
                         builder.setTitle("Game Over");
-                        builder.setMessage("Shots taken: " + numberOfShots + "\nShots blocked: " + numberOfBlocks + "\nPlay again?");
+                        builder.setMessage("Shots taken: " + numberOfShots + "\nShots saved: " + numberOfSaves + "\nPlay again?");
                         builder.setNegativeButton("No.", endGameClickListener);
                         builder.setPositiveButton("Yes.", playAgainClickListener);
 
@@ -255,6 +255,7 @@ implements SurfaceHolder.Callback
 
         @Override
         public void onClick(DialogInterface dialog, int which) {
+
             mainActivity.finish();
         }
     };

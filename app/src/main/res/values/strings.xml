@@ -3,4 +3,7 @@
 
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="soccerShootoutText">Soccer Shootout</string>
+    <string name="playMessage">Play!</string>
+    <string name="title_activity_press_play_button">pressPlayButton</string>
 </resources>

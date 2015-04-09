@@ -16,6 +16,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".pressPlayButton"
+            android:label="@string/title_activity_press_play_button" >
+        </activity>
     </application>
 
 </manifest>
