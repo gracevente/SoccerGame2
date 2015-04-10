@@ -11,6 +11,7 @@ import android.app.Dialog;
 import android.app.DialogFragment;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -28,6 +29,9 @@ import android.view.SurfaceView;
 
 import java.util.ArrayList;
 import java.util.Random;
+
+import static android.support.v4.app.ActivityCompat.startActivity;
+
 /**
  * Created by gracevente11 on 3/31/2015.
  */
@@ -232,7 +236,7 @@ implements SurfaceHolder.Callback
                         AlertDialog.Builder builder =
                                 new AlertDialog.Builder(getActivity());
                         builder.setTitle("Game Over");
-                        builder.setMessage("Shots taken: " + numberOfShots + "\nShots saved: " + numberOfSaves + "\nPlay again?");
+                        builder.setMessage("Shots saved: " + numberOfSaves + "\nPlay again?");
                         builder.setNegativeButton("No.", endGameClickListener);
                         builder.setPositiveButton("Yes.", playAgainClickListener);
 
@@ -255,7 +259,6 @@ implements SurfaceHolder.Callback
 
         @Override
         public void onClick(DialogInterface dialog, int which) {
-
             mainActivity.finish();
         }
     };

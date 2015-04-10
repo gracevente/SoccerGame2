@@ -4,4 +4,5 @@
     <dimen name="activity_vertical_margin">16dp</dimen>
     <dimen name="playButtonFontSize">30dp</dimen>
     <dimen name="soccerShootoutTextViewFontSize">40dp</dimen>
+    <dimen name="buttonPadding">10dp</dimen>
 </resources>

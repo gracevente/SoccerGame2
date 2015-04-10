@@ -20,6 +20,10 @@
             android:name=".pressPlayButton"
             android:label="@string/title_activity_press_play_button" >
         </activity>
+        <activity
+            android:name=".pressRulesButton"
+            android:label="@string/title_activity_press_rules_button" >
+        </activity>
     </application>
 
 </manifest>

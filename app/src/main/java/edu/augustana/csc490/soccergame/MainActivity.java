@@ -22,8 +22,11 @@ public class MainActivity extends Activity {
 
         Button playButton = (Button) findViewById((R.id.playButton));
         playButton.setOnClickListener((playButtonClickHandler));
-        //playButton.setTextSize();
+
+        Button rulesButton = (Button) findViewById((R.id.rulesButton));
+        rulesButton.setOnClickListener((rulesButtonClickHandler));
     }
+
 
     View.OnClickListener playButtonClickHandler = new View.OnClickListener() {
 
@@ -31,6 +34,14 @@ public class MainActivity extends Activity {
         public void onClick(View v) {
             Intent playIntent = new Intent(MainActivity.this, pressPlayButton.class);
             startActivity(playIntent);
+        }
+    };
+
+    View.OnClickListener rulesButtonClickHandler = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            Intent rulesIntent = new Intent(MainActivity.this, pressRulesButton.class);
+            startActivity(rulesIntent);
         }
     };
 

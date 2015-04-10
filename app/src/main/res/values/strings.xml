@@ -6,4 +6,6 @@
     <string name="soccerShootoutText">Soccer Shootout</string>
     <string name="playMessage">Play!</string>
     <string name="title_activity_press_play_button">pressPlayButton</string>
+    <string name="title_activity_press_rules_button">pressRulesButton</string>
+    <string name="rulesMessage">Block as many shots as you can. Once you let in 10 goals, you lose.</string>
 </resources>
